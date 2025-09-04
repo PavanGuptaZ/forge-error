@@ -1,6 +1,6 @@
 {
   "name": "forge-error",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A comprehensive HTTP error handling library for Node.js applications with typed error classes and standardized error responses.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
