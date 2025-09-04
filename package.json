@@ -1,6 +1,6 @@
 {
   "name": "forge-error",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A comprehensive HTTP error handling library for Node.js applications with typed error classes and standardized error responses.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,7 +13,18 @@
     "prepare": "npm run build"
   },
   "publisher": "PavanGuptaZ",
-  "keywords": ["http-errors", "error-handling", "nodejs", "typescript", "express", "api-errors", "rest-api", "error-classes", "http-error-handling", "http-error-classes"],
+  "keywords": [
+    "http-errors",
+    "error-handling",
+    "nodejs",
+    "typescript",
+    "express",
+    "api-errors",
+    "rest-api",
+    "error-classes",
+    "http-error-handling",
+    "http-error-classes"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/PavanGuptaZ/forge-error.git"
