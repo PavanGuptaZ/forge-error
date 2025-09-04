@@ -1,12 +1,18 @@
 {
   "name": "forge-error",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "prepare": "npm run build"
   },
+  "publisher": "PavanGuptaZ",
   "keywords": [],
   "author": "",
   "license": "ISC",
