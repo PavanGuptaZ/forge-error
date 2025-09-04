@@ -1,3 +1,5 @@
+export { BaseClientError, BaseForgeError, BaseServerError, ForgeError } from './baseForgeError';
+
 // Client errors (4xx)
 export {
   BadRequestError,
