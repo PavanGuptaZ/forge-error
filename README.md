@@ -1,6 +1,22 @@
 # forge-error
 
-A comprehensive HTTP error handling library for Node.js applications with typed error classes and standardized error responses.
+A comprehensive and type-safe HTTP error handling library for Node.js and TypeScript applications.
+`forge-error` provides a structured, standardized, and consistent approach to defining, throwing, and handling HTTP errors with minimal boilerplate code. With fully typed error classes and built-in support for standardized error responses, it helps you write cleaner, more maintainable error handling logic in your application.
+
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Features](#features)
+3. [Usage](#usage)
+
+   * [Creating Errors](#creating-errors)
+   * [Express Integration](#express-integration)
+   * [Async Error Handling](#async-error-handling)
+   * [Global Error Handler](#global-error-handler)
+4. [Error Classes](#error-classes)
+5. [Utilities](#utilities)
+6. [Error Payload Structure](#error-payload-structure)
+7. [Built-in Error Constants](#built-in-error-constants)
 
 ## Installation
 
@@ -8,112 +24,180 @@ A comprehensive HTTP error handling library for Node.js applications with typed 
 npm install forge-error
 # or
 yarn add forge-error
+# or
+pnpm add forge-error
 ```
 
 ## Features
 
 - Full suite of HTTP error classes (4xx and 5xx)
-- TypeScript support with full type definitions
-- Standardized error responses
-- Custom error data support
-- Easy error identification utilities
+- Standardized error payload structure
+- First-class TypeScript support
+- Custom error code and data support
+- Utility functions to handle, format, and inspect errors
+- Seamless integration with Express.js
+- Async controller wrapper for concise error handling
 
-## Input Types
 
-The library accepts two types of inputs for error creation:
+## Usage
 
-```typescript
-// Type definition
-type ErrorPayloadType = string | {
-  message: string;
-  data?: object;
-  statusCode?: number;
-  errorCode?: string;
-};
-```
+### Creating Errors
 
-### Method 1: Simple String Input
+You can create errors using one of the built-in error classes or create fully custom errors with `ForgeError`.
+
+#### Using a Simple String
+
 ```typescript
 import { NotFoundError } from 'forge-error';
 
-// Just pass the error message
 throw new NotFoundError('Resource not found');
 ```
 
-### Method 2: Detailed Error Object
+#### Using a Detailed Object
+
 ```typescript
 import { BadRequestError } from 'forge-error';
 
-// Pass an object with message and optional fields
 throw new BadRequestError({
-  message: 'Validation failed',
+  message: 'Invalid input data',
   data: {
     field: 'email',
-    error: 'Invalid format'
+    issue: 'Invalid format'
   },
-  // Optional: override default status code
-  statusCode: 400,
-  // Optional: override default error code
-  errorCode: 'VALIDATION_ERROR'
+  errorCode: 'INVALID_EMAIL'
 });
 ```
 
-### Method 3: Custom Error with ForgeError
+#### Creating a Custom Error
+
 ```typescript
 import { ForgeError } from 'forge-error';
 
-// Create completely custom error
 throw new ForgeError(
-  'Custom error message',
-  418, // custom status code
+  'Custom error occurred',
+  418,
   'CUSTOM_ERROR_CODE',
-  { customData: 'value' } // optional data
+  { additional: 'context' }
 );
 ```
 
-## Express.js Integration
+### Express Integration
 
-The error payloads are designed to work seamlessly with Express.js responses:
+You can easily integrate `forge-error` with your Express.js application to return consistent error responses.
+
+#### Wrapping Async Controllers
+
+Use `handleAsyncRequest` to wrap controller logic and eliminate manual `try-catch` blocks:
 
 ```typescript
-import { getErrorPayload } from 'forge-error';
+import express, { Request, Response } from 'express';
+import { handleAsyncRequest } from 'forge-error';
 
-app.use((error, req, res, next) => {
-  const errorPayload = getErrorPayload(error);
-  if (errorPayload) {
-    const { statusCode, ...responseBody } = errorPayload;
-    return res.status(statusCode).json(responseBody);
-  }
-  next(error);
+const app = express();
+
+app.post('/login', handleAsyncRequest(async (req: Request, res: Response) => {
+  // Your logic here
+  res.status(200).json({ message: 'Login successful' });
+}));
+```
+
+You can also export wrapped handlers:
+
+```typescript
+// controllers/auth.controller.ts
+app.post('/login', loginController);
+
+const loginController = handleAsyncRequest(async (req, res) => {
+  // Logic here
 });
 ```
 
-## Error Types
+---
+
+### Global Error Handler
+
+Use `getForgeErrorPayload` to build standardized error responses in your global error middleware:
+
+```typescript
+const app = express();
+
+app.use(routes)
+
+app.use((error, req, res, next) => {
+  const { statusCode, errorCode, message, data } = getForgeErrorPayload(error);
+
+  res.status(statusCode).json({
+    success: false,
+    statusCode,
+    errorCode,
+    message,
+    ...(data ? { data } : {})
+  });
+});
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    statusCode: 404,
+    errorCode: 'NOT_FOUND',
+    message: 'Resource not found'
+  });
+})
+```
+
+
+```typescript
+import { ErrorRequestHandler } from 'express';
+import { getForgeErrorPayload } from 'forge-error';
+
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  const { statusCode, errorCode, message, data } = getForgeErrorPayload(err);
+
+  res.status(statusCode).json({
+    success: false,
+    statusCode,
+    errorCode,
+    message,
+    ...(data ? { data } : {})
+  });
+};
+
+export { errorHandler };
+```
+
+## Error Classes
+
+The library provides predefined error classes corresponding to standard HTTP status codes.
 
 ### Client Errors (4xx)
+
 ```typescript
-import { 
-  BadRequestError,          // 400
-  UnauthorizedError,        // 401
-  ForbiddenError,          // 403
-  NotFoundError,           // 404
-  MethodNotAllowedError,   // 405
-  // ... and many more
+import {
+  BadRequestError,           // 400
+  UnauthorizedError,         // 401
+  ForbiddenError,            // 403
+  NotFoundError,             // 404
+  MethodNotAllowedError,     // 405
+  NotAcceptableError,        // 406
+  ConflictError,             // 409
+  // ... and more
 } from 'forge-error';
 ```
 
 ### Server Errors (5xx)
+
 ```typescript
 import {
-  InternalServerError,     // 500
-  NotImplementedError,     // 501
-  BadGatewayError,        // 502
-  ServiceUnavailableError, // 503
-  // ... and many more
+  InternalServerError,       // 500
+  NotImplementedError,       // 501
+  BadGatewayError,           // 502
+  ServiceUnavailableError,   // 503
+  GatewayTimeoutError,       // 504
+  // ... and more
 } from 'forge-error';
 ```
 
-## Error Payload Utilities
+## Utilities
 
 The package provides several utility functions to handle error payloads. These are divided into two categories:
 
@@ -187,9 +271,18 @@ app.use((error, req, res, next) => {
 });
 ```
 
-## Error Structure
+```typescript
+import { isClientError, isServerError, isBaseError } from 'forge-error';
 
-All errors return a consistent payload structure:
+const error = new NotFoundError('Resource not found');
+
+isClientError(error);  // true
+isServerError(error);  // false
+isBaseError(error);    // true
+```
+## Error Payload Structure
+
+All forge errors return a standardized structure:
 
 ```typescript
 {
@@ -200,32 +293,8 @@ All errors return a consistent payload structure:
 }
 ```
 
-## Utility Functions
+This format is useful for consistent API responses, logging, and debugging.
 
-```typescript
-import { isClientError, isServerError, isBaseError } from 'forge-error';
-
-const error = new NotFoundError('Resource not found');
-
-isClientError(error);  // true
-isServerError(error);  // false
-isBaseError(error);    // true
-```
-
-## Custom Error Example
-
-```typescript
-import { BaseClientError } from 'forge-error';
-
-// Create a custom error
-throw new BadRequestError({
-  message: 'Validation failed',
-  data: {
-    field: 'email',
-    error: 'Invalid format'
-  }
-});
-```
 
 ## Error Handling Example
 
@@ -249,13 +318,9 @@ try {
 }
 ```
 
-## License
-
-MIT
-
 ## Built-in Error Constants
 
-The library includes a comprehensive set of predefined HTTP error types with their default values. You can override these defaults using Method 2 above.
+The library includes a comprehensive set of predefined HTTP error types with their default values. You can override these defaults using a detailed object.
 
 | Error Class | Status Code | Error Code | Default Message |
 |------------|-------------|------------|-----------------|
